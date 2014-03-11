@@ -1,7 +1,9 @@
+from datetime import datetime
 import json
 
 from sqlalchemy import inspect
 from sqlalchemy.orm.relationships import RelationshipProperty
+from sqlalchemy.types import DATETIME
 
 from sautils.encoders import DateTimeEncoder
 
@@ -51,7 +53,8 @@ class SerializeMixin(object):
             self.to_dict(follow_rels=follow_rels,
                          force_serialization=force_serialization), cls=encoder)
 
-    def from_dict(self, model_dict):
+    @classmethod
+    def from_dict(cls, model_dict):
         """Convert a SQLAlchemy model dict to a model instance.
 
         Args:
@@ -61,9 +64,10 @@ class SerializeMixin(object):
             SQLAlchemy model instance
         """
 
-        return _from_dict_rec(self, model_dict)
+        return _from_dict_rec(cls, model_dict)
 
-    def from_json(self, json_model):
+    @classmethod
+    def from_json(cls, json_model):
         """Convert a json serialized SQLAlchemy model to a model instance.
 
         Args:
@@ -75,7 +79,7 @@ class SerializeMixin(object):
 
         model_dict = json.loads(json_model)
 
-        return self.from_dict(model_dict)
+        return cls.from_dict(model_dict)
 
 
 def _to_dict_rec(obj, data, visited, follow_rels, force_serialization):
@@ -127,5 +131,22 @@ def _from_dict_rec(obj, data):
     for prop in inspect(obj.__class__).iterate_properties:
 
         if not isinstance(prop, RelationshipProperty):
-            setattr(obj, prop.key, data[prop.key.lstrip('_')])
+
+            column_type = prop.class_attribute.property.columns[0].type
+            dict_key = prop.key.lstrip('_')
+
+            if isinstance(column_type, DATETIME):
+                time = data[dict_key]
+                if isinstance(time, basestring):
+                    year, month, extra = time.split('-')
+                    day, extra = extra.split(' ')
+                    hour, minute, extra = extra.split(':')
+                    second, microsecond = extra.split('.')
+
+                    time = datetime(
+                        year, month, day, hour, minute, second, microsecond)
+
+                    data[dict_key] = time
+
+            setattr(obj, prop.key, data[dict_key])
 
