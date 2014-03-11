@@ -146,7 +146,8 @@ def _from_dict_rec(obj, data):
                     second, microsecond = extra.split('.')
 
                     time = datetime(
-                        year, month, day, hour, minute, second, microsecond)
+                        int(year), int(month), int(day), int(hour),
+                        int(minute), int(second), int(microsecond))
 
                     data[dict_key] = time
 
