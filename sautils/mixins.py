@@ -153,3 +153,5 @@ def _from_dict_rec(obj, data):
 
             setattr(model, prop.key, data[dict_key])
 
+    return model
+
