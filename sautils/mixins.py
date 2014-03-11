@@ -51,6 +51,32 @@ class SerializeMixin(object):
             self.to_dict(follow_rels=follow_rels,
                          force_serialization=force_serialization), cls=encoder)
 
+    def from_dict(self, model_dict):
+        """Convert a SQLAlchemy model dict to a model instance.
+
+        Args:
+            model_dict: the SQLAlchemy model dict
+
+        Returns:
+            SQLAlchemy model instance
+        """
+
+        return _from_dict_rec(self, model_dict)
+
+    def from_json(self, json_model):
+        """Convert a json serialized SQLAlchemy model to a model instance.
+
+        Args:
+            json_model: the json serialized model
+
+        Returns:
+            SQLAlchemy model instance
+        """
+
+        model_dict = json.loads(json_model)
+
+        return self.from_dict(model_dict)
+
 
 def _to_dict_rec(obj, data, visited, follow_rels, force_serialization):
     """Transform the model to a dict, recursing on related models if necessary.
@@ -93,4 +119,13 @@ def _to_dict_rec(obj, data, visited, follow_rels, force_serialization):
         data.update(obj.__include__())
 
     return data
+
+
+def _from_dict_rec(obj, data):
+    """Recover a model instance from a dict."""
+
+    for prop in inspect(obj.__class__).iterate_properties:
+
+        if not isinstance(prop, RelationshipProperty):
+            setattr(obj, prop.key, data[prop.key.lstrip('_')])
 
