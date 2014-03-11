@@ -128,7 +128,9 @@ def _to_dict_rec(obj, data, visited, follow_rels, force_serialization):
 def _from_dict_rec(obj, data):
     """Recover a model instance from a dict."""
 
-    for prop in inspect(obj.__class__).iterate_properties:
+    model = obj()
+
+    for prop in inspect(obj).iterate_properties:
 
         if not isinstance(prop, RelationshipProperty):
 
@@ -148,5 +150,5 @@ def _from_dict_rec(obj, data):
 
                     data[dict_key] = time
 
-            setattr(obj, prop.key, data[dict_key])
+            setattr(model, prop.key, data[dict_key])
 
