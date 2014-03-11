@@ -143,7 +143,10 @@ def _from_dict_rec(obj, data):
                     year, month, extra = time.split('-')
                     day, extra = extra.split(' ')
                     hour, minute, extra = extra.split(':')
-                    second, microsecond = extra.split('.')
+                    if '.' in extra:
+                        second, microsecond = extra.split('.')
+                    else:
+                        second, microsecond = extra, 0
 
                     time = datetime(
                         int(year), int(month), int(day), int(hour),
