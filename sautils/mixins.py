@@ -125,36 +125,37 @@ def _to_dict_rec(obj, data, visited, follow_rels, force_serialization):
     return data
 
 
-def _from_dict_rec(obj, data):
+def _from_dict_rec(cls, data):
     """Recover a model instance from a dict."""
 
-    model = obj()
+    model = cls()
 
-    for prop in inspect(obj).iterate_properties:
+    for prop in inspect(cls).iterate_properties:
 
-        if not isinstance(prop, RelationshipProperty):
+        if isinstance(prop, RelationshipProperty):
+            continue
 
-            column_type = prop.class_attribute.property.columns[0].type
-            dict_key = prop.key.lstrip('_')
+        column_type = prop.class_attribute.property.columns[0].type
+        dict_key = prop.key.lstrip('_')
 
-            if isinstance(column_type, DATETIME):
-                time = data[dict_key]
-                if isinstance(time, basestring):
-                    year, month, extra = time.split('-')
-                    day, extra = extra.split(' ')
-                    hour, minute, extra = extra.split(':')
-                    if '.' in extra:
-                        second, microsecond = extra.split('.')
-                    else:
-                        second, microsecond = extra, 0
+        if isinstance(column_type, DATETIME):
+            time = data[dict_key]
+            if isinstance(time, basestring):
+                year, month, extra = time.split('-')
+                day, extra = extra.split(' ')
+                hour, minute, extra = extra.split(':')
+                if '.' in extra:
+                    second, microsecond = extra.split('.')
+                else:
+                    second, microsecond = extra, 0
 
-                    time = datetime(
-                        int(year), int(month), int(day), int(hour),
-                        int(minute), int(second), int(microsecond))
+                time = datetime(
+                    int(year), int(month), int(day), int(hour),
+                    int(minute), int(second), int(microsecond))
 
-                    data[dict_key] = time
+                data[dict_key] = time
 
-            setattr(model, prop.key, data[dict_key])
+        setattr(model, prop.key, data[dict_key])
 
     return model
 
